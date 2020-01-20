@@ -1,0 +1,111 @@
+
+sudo apt-get install squashfs-tools genisoimage
+
+
+mkdir ~/custom-img
+
+
+cp /home/mohammed/ubuntu.iso ~/custom-img
+
+cd ~/custom-img
+
+
+mkdir mnt
+sudo mount -o loop ubuntu.iso mnt
+
+mkdir extract
+
+sudo rsync --exclude=/install/filesystem.squashfs -a mnt/ extract
+
+
+
+sudo unsquashfs mnt/install/filesystem.squashfs
+
+sudo mv squashfs-root edit
+
+sudo cp /etc/resolv.conf edit/etc/
+
+
+sudo mount --bind /dev/ edit/dev
+
+sudo chroot edit
+
+mount -t proc none /proc
+
+mount -t sysfs none /sys
+
+mount -t devpts none /dev/pts
+
+
+export HOME=/root
+export LC_ALL=C
+dbus-uuidgen > /var/lib/dbus/machine-id
+dpkg-divert --local --rename --add /sbin/initctl
+
+ln -s /bin/true /sbin/initctlSince
+
+dpkg --add-architecture i386
+
+
+
+apt-get install apache2
+apt-get install nano
+apt-get install php5
+sudo nano /etc/php5/apache2/php.ini
+upload_max_filesize = 128M
+post_max_size = 128M
+sudo chmod -R 777 ~/custom-img/edit/var/www/html/
+cp -Rv ~/html/* ~/custom-img/edit/var/www/html/
+sudo service apache2 restart
+apt-get install mysql-server
+
+
+pass:PASSWORD-dbase
+
+mysql -u root -p
+SHOW DATABASES;
+CREATE DATABASE Name-dbase;
+USE dbase;
+
+
+apt-get autoremove && apt-get autoclean
+
+rm -rf /tmp/* ~/.bash_history
+
+rm /var/lib/dbus/machine-id
+
+rm /sbin/initctl
+
+dpkg-divert --rename --remove /sbin/initctl
+
+
+umount /proc || umount -lf /proc
+umount /sys
+umount /dev/pts
+exit
+sudo umount edit/dev
+
+
+sudo chmod +w extract/install/filesystem.manifest
+sudo chroot edit dpkg-query -W --showformat='${Package} ${Version}\n' | sudo tee extract/install/filesystem.manifest
+sudo cp extract/install/filesystem.manifest extract/install/filesystem.manifest
+sudo sed -i '/ubiquity/d' extract/install/filesystem.manifest
+sudo sed -i '/install/d' extract/install/filesystem.manifest
+
+###Compress the filesystem:
+
+sudo mksquashfs edit extract/install/filesystem.squashfs -b 1048576
+
+###Update filesystem size (needed by the installer):
+
+printf $(sudo du -sx --block-size=1 edit | cut -f1) | sudo tee extract/install/filesystem.size
+
+cd extract
+sudo rm md5sum.txt
+
+find -type f -print0 | sudo xargs -0 md5sum | grep -v isolinux/boot.cat | sudo tee md5sum.txt
+
+
+
+
+sudo mkisofs -U -A "ubuntu" -V "ubuntu" -volset "ubuntu" -J -joliet-long -r -v -T -o ../ubuntu.iso -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e boot/grub/efi.img -no-emul-boot .
