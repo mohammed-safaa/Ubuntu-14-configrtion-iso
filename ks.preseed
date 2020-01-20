@@ -1,8 +1,8 @@
 
 d-i netcfg/get_hostname string MediaBox
 
-d-i passwd/user-fullname string ARYA-SYSTEMS
-d-i passwd/username string arya66
+d-i passwd/user-fullname string MOHAMMED-SYSTEMS
+d-i passwd/username string mohammed123
 d-i passwd/user-password-crypted password $1$.FFoJijO$PpNRSFqt2FR6JUSs5nBvz/
 d-i user-setup/allow-password-weak boolean true
 d-i passwd/user-default-groups string cdrom sudo
