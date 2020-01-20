@@ -1,0 +1,62 @@
+
+d-i netcfg/get_hostname string MediaBox
+
+d-i passwd/user-fullname string ARYA-SYSTEMS
+d-i passwd/username string arya66
+d-i passwd/user-password-crypted password $1$.FFoJijO$PpNRSFqt2FR6JUSs5nBvz/
+d-i user-setup/allow-password-weak boolean true
+d-i passwd/user-default-groups string cdrom sudo
+
+
+# Use LVM for partitioning
+d-i   partman-auto/method string lvm
+
+# If one of the disks that are going to be automatically partitioned
+# contains an old LVM configuration, the user will normally receive a
+# warning. Preseed this away
+d-i     partman-lvm/device_remove_lvm boolean true
+
+# And the same goes for the confirmation to write the lvm partitions.
+d-i     partman-lvm/confirm boolean true
+
+# Really, please don't prompt me!
+d-i     partman-lvm/confirm_nooverwrite boolean true
+
+#  partitioning
+# Physical partitions:
+
+d-i partman-auto/expert_recipe string                         \
+      boot-root ::                                            \
+              1 1 1 free method{ biosgrub } .                 \
+              250 250 250 ext2                                \
+                      $primary{ } $bootable{ }                \
+                      method{ format } format{ }              \
+                      use_filesystem{ } filesystem{ ext2 }    \
+                      mountpoint{ /boot }                     \
+              .                                               \
+              100% 2048 100% linux-swap                       \
+                      lv_name{ swap }                         \
+                      method{ swap } format{ }                \
+                      $lvmok{ }                               \
+              .                                               \
+              256000 256000 256000 ext4                       \
+                      lv_name{ root }                         \
+                      method{ lvm } format{ }                 \
+                      use_filesystem{ } filesystem{ ext4 }    \
+                      mountpoint{ / }                         \
+                      $lvmok{ }                               \
+              .                                               \
+              1024 1024 -1 xfs                                \
+                      lv_name{ data }                         \
+                      method{ lvm } format{ }                 \
+                      use_filesystem{ } filesystem{ xfs }     \
+                      mountpoint{ /data }                     \
+                      $lvmok{ }                               \
+              .
+
+# This makes partman automatically partition without confirmation, provided
+# that you told it what to do using one of the methods above.
+d-i     partman-partitioning/confirm_write_new_label boolean true
+d-i     partman/choose_partition select finish
+d-i     partman/confirm boolean true
+d-i     partman/confirm_nooverwrite boolean true
